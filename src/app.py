@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
+from models import db, User, Planets, People
 #from models import Person
 
 app = Flask(__name__)
@@ -36,14 +36,35 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-@app.route('/user', methods=['GET'])
-def handle_hello():
+@app.route('/users', methods=['GET'])
+def get_all_users():
+    users = User.query.all()
+    serialized_users = list(map(lambda item: item.serialize(), users))
+    return jsonify({'msg' : 'Ok', 'results' : serialized_users}), 200
 
-    response_body = {
-        "msg": "Hello, this is your GET /user response "
-    }
+@app.route('/planets', methods=['GET'])
+def get_all_planets():
+    planets = Planets.query.all()
+    serialized_planets = list(map(lambda item: item.serialize(), planets))
+    return jsonify({'msg': 'Ok', 'results': serialized_planets}), 200
 
-    return jsonify(response_body), 200
+@app.route('/planets/<planet_id>', methods=['GET'])
+def get_particular_planet(planet_id):
+    planet = Planets.query.get(planet_id)
+    serialzed_planet = planet.serialize()
+    return jsonify({'msg': 'Ok', 'results': serialzed_planet}), 200
+
+@app.route('/people', methods=['GET'])
+def get_all_people():
+    people = People.query.all()
+    serialized_people = list(map(lambda item: item.serialize(), people))
+    return jsonify({'msg': 'Ok', 'results': serialized_people}), 200
+
+@app.route('/people/<people_id>', methods=['GET'])
+def get_particular_people(people_id):
+    people = People.query.get(people_id)
+    serialized_people = people.serialize()
+    return jsonify({'msg': 'Ok', 'results': serialized_people}), 200
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
