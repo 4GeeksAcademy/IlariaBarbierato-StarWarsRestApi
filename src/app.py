@@ -46,7 +46,7 @@ def get_all_people():
 
 
 #Get one single person's information.
-@app.route('/people/<people_id>', methods=['GET'])
+@app.route('/people/<int:people_id>', methods=['GET'])
 def get_particular_people(people_id):
     people = People.query.get(people_id)
     serialized_people = people.serialize()
@@ -62,7 +62,7 @@ def get_all_planets():
 
 
 #Get one single planet's information.
-@app.route('/planets/<planet_id>', methods=['GET'])
+@app.route('/planets/<int:planet_id>', methods=['GET'])
 def get_particular_planet(planet_id):
     planet = Planets.query.get(planet_id)
     serialzed_planet = planet.serialize()
@@ -78,7 +78,7 @@ def get_all_users():
 
 
 #Get all the planets favorites that belong to the current user.
-@app.route('/favoritesPlanets/user/<user_id>', methods=['GET'])
+@app.route('/favoritesPlanets/user/<int:user_id>', methods=['GET'])
 def get_favorites_planets(user_id):
     user = User.query.get(user_id)
     if user is None:
@@ -91,7 +91,7 @@ def get_favorites_planets(user_id):
 
 
 #Get all the planets favorites that belong to the current user.
-@app.route('/favoritePeople/user/<user_id>', methods=['GET'])
+@app.route('/favoritePeople/user/<int:user_id>', methods=['GET'])
 def get_favorite_people(user_id):
     user = User.query.get(user_id)
     if user is None:
@@ -104,12 +104,13 @@ def get_favorite_people(user_id):
 
 
 #Get all the favorites that belong to the current user.
-@app.route('/users/favorites/<user_id>', methods=['GET'])
+@app.route('/users/favorites/<int:user_id>', methods=['GET'])
 def get_all_favorites(user_id):
     user = User.query.get(user_id)
     if user is None:
         return ({'msg': 'The user with id {} does not exist'.format(user_id)}), 404
     favorite_people = db.session.query(FavoritePeople, People).join(People).filter(FavoritePeople.user_id == user_id).all()
+    print(favorite_people)
     serialized_favorites = []
     for favorite_item, people_item in favorite_people:
         serialized_favorites.append({'person': people_item.serialize()})
@@ -117,6 +118,41 @@ def get_all_favorites(user_id):
     for favorite_item, planet_item in favorites_planets:
         serialized_favorites.append({'planet': planet_item.serialize()})
     return({'msg': 'Ok', 'results': serialized_favorites, 'user': user.serialize()}), 200
+
+
+# Add a new favorite planet to the current user with the planet id = planet_id
+@app.route('/favorite/planet/<int:planet_id>/user/<int:user_id>', methods=['POST'])
+def add_favorite_planet(planet_id, user_id):
+    user = User.query.get(user_id)
+    if user is None:
+        return ({'msg': 'The user with id {} does not exist'.format(user_id)}), 404
+    planet = Planets.query.get(planet_id)
+    if planet is None:
+        return({'msg': 'The planet with id {} does not exist'.format(planet_id)}), 404
+    existing_favorite = db.session.query(FavoritesPlanets).filter((FavoritesPlanets.planet_id == planet_id) & (FavoritesPlanets.user_id == user_id)).all()
+    if existing_favorite:
+        return({'msg': 'The planet with id {} is already a favorite for the user with id {}'.format(planet_id, user_id)})
+    favorite_planet = FavoritesPlanets(user_id=user_id, planet_id=planet_id)
+    db.session.add(favorite_planet)
+    db.session.commit()
+    return({'msg': 'The planet with id {} has been correctly added to the favorites of the user with id {}'.format(planet_id, user_id)})
+
+#Add new favorite people to the current user with the people id = people_id
+@app.route('/favorite/people/<int:people_id>/user/<int:user_id>', methods=['POST'])
+def add_favorite_person(people_id, user_id):
+    user = User.query.get(user_id)
+    if user is None:
+        return ({'msg': 'The user with id {} does not exist'.format(user_id)}), 404
+    person = People.query.get(people_id)
+    if person is None:
+        return({'msg': 'The person with id {} does not exist'.format(people_id)}), 404
+    existing_favorite = db.session.query(FavoritePeople).filter((FavoritePeople.people_id == people_id) & (FavoritePeople.user_id == user_id)).all()
+    if existing_favorite:
+        return({'msg': 'The person with id {} is already a favorite for the user with id {}'.format(people_id, user_id)})
+    favorite_person = FavoritePeople(user_id=user_id, people_id=people_id)
+    db.session.add(favorite_person)
+    db.session.commit()
+    return({'msg': 'The person with id {} has been correctly added to the favorites of the user with id {}'.format(people_id, user_id)})
 
 
 # this only runs if `$ python src/app.py` is executed
