@@ -90,7 +90,7 @@ def get_favorites_planets(user_id):
     return({'msg': 'ok', 'planets_favorites': serialized_favorites_planets, 'user': user.serialize()}), 200
 
 
-#Get all the planets favorites that belong to the current user.
+#Get all the people favorites that belong to the current user.
 @app.route('/favoritePeople/user/<int:user_id>', methods=['GET'])
 def get_favorite_people(user_id):
     user = User.query.get(user_id)
@@ -137,6 +137,7 @@ def add_favorite_planet(planet_id, user_id):
     db.session.commit()
     return({'msg': 'The planet with id {} has been correctly added to the favorites of the user with id {}'.format(planet_id, user_id)})
 
+
 #Add new favorite people to the current user with the people id = people_id
 @app.route('/favorite/people/<int:people_id>/user/<int:user_id>', methods=['POST'])
 def add_favorite_person(people_id, user_id):
@@ -153,6 +154,44 @@ def add_favorite_person(people_id, user_id):
     db.session.add(favorite_person)
     db.session.commit()
     return({'msg': 'The person with id {} has been correctly added to the favorites of the user with id {}'.format(people_id, user_id)})
+
+
+# Delete a favorite planet with the id = planet_id
+@app.route('/favorite/planet/<int:planet_id>/user/<int:user_id>', methods=['DELETE'])
+def delete_favorite_planet(planet_id, user_id):
+    user = User.query.get(user_id)
+    if user is None:
+        return ({'msg': 'The user with id {} does not exist'.format(user_id)}), 404
+    planet = Planets.query.get(planet_id)
+    if planet is None:
+        return({'msg': 'The planet with id {} does not exist'.format(planet_id)}), 404
+    favorite_planet_to_delete = db.session.query(FavoritesPlanets).filter((FavoritesPlanets.planet_id == planet_id) & (FavoritesPlanets.user_id == user_id)).first()
+    if favorite_planet_to_delete is None:
+        return({'msg': 'The planet with id {} is not a favorite for the user with id {}'.format(planet_id, user_id)})
+    
+    db.session.delete(favorite_planet_to_delete)
+    db.session.commit()
+
+    return ({'msg': 'The planet with id {} has been correctly deleted from the favorites of the user with id {}'.format(planet_id, user_id)})
+
+
+# Delete a favorite person with the id = planet_id
+@app.route('/favorite/people/<int:people_id>/user/<int:user_id>', methods=['DELETE'])
+def delete_favorite_person(people_id, user_id):
+    user = User.query.get(user_id)
+    if user is None:
+        return ({'msg': 'The user with id {} does not exist'.format(user_id)}), 404
+    person = People.query.get(people_id)
+    if person is None:
+        return({'msg': 'The person with id {} does not exist'.format(people_id)}), 404
+    favorite_person_to_delete = db.session.query(FavoritePeople).filter((FavoritePeople.people_id == people_id) & (FavoritePeople.user_id == user_id)).first()
+    if favorite_person_to_delete is None:
+        return({'msg': 'The person with id {} is not a favorite for the user with id {}'.format(people_id, user_id)})
+    
+    db.session.delete(favorite_person_to_delete)
+    db.session.commit()
+
+    return ({'msg': 'The person with id {} has been correctly deleted from the favorites of the user with id {}'.format(people_id, user_id)})
 
 
 # this only runs if `$ python src/app.py` is executed
